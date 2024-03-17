@@ -17,17 +17,11 @@ def imap_connect(host: str, **kwargs) -> imaplib.IMAP4:
         ssl_on (bool): Enable the SSL connection.
     """
     ssl_on = kwargs.get('ssl_on', False)
-    port = kwargs.get('port', None)
+    port = kwargs.get('port', (143 if not ssl_on else 993))
     if ssl_on:
-        return imaplib.IMAP4_SSL(
-            host=host,
-            port=(port if not port is None else 993),
-        )
+        return imaplib.IMAP4_SSL(host=host, port=port)
     else:
-        return imaplib.IMAP4(
-            host=host,
-            port=(port if not port is None else 143),
-        )
+        return imaplib.IMAP4(host=host, port=port)
 
 
 def imap_auth_login(connection: imaplib.IMAP4, username: str, password: str) -> bool:
