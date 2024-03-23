@@ -14,6 +14,20 @@ def gmail(context, warn_on: bool) -> None:
     context.connection = imap.get_connection("imap.gmail.com", ssl_on=True)
 
 
+@gmail.command(name="mailboxes")
+@click.argument("username")
+@click.option("--password", "-p", required=True)
+@click.pass_context
+def gmail_mailboxes(context, username: str, password: str) -> None:
+    """
+    Show the list of mailboxes.
+    """
+    if not imap.do_login(context.parent.connection, username, password):
+        return
+    for mailbox in imap.get_mailboxes(context.parent.connection):
+        click.echo(mailbox)
+
+
 @gmail.command(name="senders")
 @click.argument("username")
 @click.option("--password", "-p", required=True)
