@@ -2,16 +2,16 @@
 
 A simple tool to remove emails. Here some things that you can do:
 
-* [] List all emails in your mailbox;
+* [ ] List all emails in your mailbox;
 * [x] List all emails address senders in your mailbox;
 * [x] List all mailboxes;
-* [] Remove all emails in your mailbox;
+* [ ] Remove all emails in your mailbox;
 * [x] Remove all emails by senders in your mailbox;
-* [] Deletions scheduler;
+* [ ] Deletions scheduler;
 
 Here some services/providers support:
 
-* [] Any IMAP Server;
+* [ ] Any IMAP Server;
 * [x] Gmail IMAP Server;
 
 ## Running the command:
