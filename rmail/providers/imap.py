@@ -2,10 +2,10 @@ import re
 import imaplib
 import email
 from email.header import decode_header
-from typing import Iterator
+from typing import Iterator, Tuple
 
 
-def imap_connect(host: str, **kwargs) -> imaplib.IMAP4:
+def get_connection(host: str, **kwargs) -> imaplib.IMAP4:
     """
     Get a new connection for IMAP Server.
 
@@ -24,7 +24,7 @@ def imap_connect(host: str, **kwargs) -> imaplib.IMAP4:
         return imaplib.IMAP4(host=host, port=port)
 
 
-def imap_auth_login(connection: imaplib.IMAP4, username: str, password: str) -> bool:
+def do_login(connection: imaplib.IMAP4, username: str, password: str) -> bool:
     """
     Do login in IMAP Connection.
 
@@ -37,7 +37,7 @@ def imap_auth_login(connection: imaplib.IMAP4, username: str, password: str) -> 
     return ok == 'OK'
 
 
-def imap_auth_logout(connection: imaplib.IMAP4) -> bool:
+def do_logout(connection: imaplib.IMAP4) -> bool:
     """
     Do logout in IMAP connection.
     """
@@ -45,7 +45,7 @@ def imap_auth_logout(connection: imaplib.IMAP4) -> bool:
     return bye == "BYE"
 
 
-def imap_mailbox_get_list(connection: imaplib.IMAP4) -> Iterator[str]:
+def get_mailboxes(connection: imaplib.IMAP4) -> Iterator[str]:
     """
     Get the list of mailbox.
 
@@ -61,7 +61,7 @@ def imap_mailbox_get_list(connection: imaplib.IMAP4) -> Iterator[str]:
         yield mailbox_name
 
 
-def imap_mailbox_set_inbox(connection: imaplib.IMAP4, mailbox: str = "INBOX") -> None:
+def set_mailbox(connection: imaplib.IMAP4, mailbox: str = "INBOX") -> None:
     """
     Define the INBOX target to do any operation.
 
@@ -72,15 +72,20 @@ def imap_mailbox_set_inbox(connection: imaplib.IMAP4, mailbox: str = "INBOX") ->
     connection.select(mailbox)
 
 
-def imap_emails_get_senders(connection: imaplib.IMAP4) -> Iterator[str]:
+def get_senders(connection: imaplib.IMAP4, search: str = "ALL") -> Iterator[Tuple[int, str]]:
     """
     Get list of Sender in mailbox emails.
 
     Args:
         connection (imaplib.IMAP4 | imaplib.IMAP4_SSL): A IMAP connection server.
+        search (str): E-email address expression.
     """
     email_regexp = re.compile(r".*(<(?P<email>.*)>).*")
-    for email_id in connection.search(None, 'ALL')[1][0].split():
+    if search.strip() != "ALL":
+        search = f"FROM { search }"
+    elif search is None or search.strip() == "":
+        search = "ALL"
+    for email_id in connection.search(None, search)[1][0].split():
         _, email_content  = connection.fetch(email_id, "(RFC822)")
         for email_content_response in email_content:
             if not isinstance(email_content_response, tuple):
@@ -93,5 +98,17 @@ def imap_emails_get_senders(connection: imaplib.IMAP4) -> Iterator[str]:
             if email_sender_search is None:
                 break
             else:
-                yield email_sender_search.group("email")
+                yield (email_id, email_sender_search.group("email"))
             break
+
+
+def email_delete(connection: imaplib.IMAP4, email_id: int) -> None:
+    """
+    Delete a specific email.
+
+    Args:
+        connection (imaplib.IMAP4 | imaplib.IMAP4_SSL): A IMAP connection server.
+        email_id (int): The email id.
+    """
+    connection.store(email_id, '+FLAGS', '\\Deleted')
+    connection.expunge()
